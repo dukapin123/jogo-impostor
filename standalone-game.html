@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Impostor Social - Jogo de Blefe e Dedução</title>
+  <style>
+    :root {
+      --bg: #090a0f;
+      --card-bg: #13151f;
+      --card-border: #222638;
+      --accent: #e11d48;
+      --accent-hover: #f43f5e;
+      --accent-glow: rgba(225, 29, 72, 0.4);
+      --civil: #10b981;
+      --civil-glow: rgba(16, 185, 129, 0.3);
+      --text: #f3f4f6;
+      --text-muted: #9ca3af;
+      --text-dim: #6b7280;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 12px;
+    }
+
+    .app-viewport {
+      width: 100%;
+      max-width: 440px;
+      min-height: 92vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+    }
+
+    /* Utilitários */
+    .hidden { display: none !important; }
+    .text-center { text-align: center; }
+
+    /* Cabeçalho do App */
+    .header-logo {
+      text-align: center;
+      margin-bottom: 12px;
+    }
+    .badge-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, var(--accent), #9f1239);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 24px;
+      color: #fff;
+      box-shadow: 0 8px 20px var(--accent-glow);
+      margin-bottom: 8px;
+    }
+    .app-title {
+      font-size: 24px;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+    }
+    .app-title span { color: var(--accent); }
+    .app-desc {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* Cards e Containers */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    }
+    .card-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Inputs e Lista de Jogadores */
+    .input-row {
+      display: flex;
+      gap: 8px;
+    }
+    .input-text {
+      flex: 1;
+      background: #0b0d14;
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 10px 14px;
+      color: #fff;
+      font-size: 14px;
+      outline: none;
+    }
+    .input-text:focus { border-color: var(--accent); }
+    .btn-add {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      width: 44px;
+      border-radius: 12px;
+      font-size: 20px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .player-list {
+      margin-top: 10px;
+      max-height: 150px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .player-chip {
+      background: #0c0e16;
+      border: 1px solid #1c2030;
+      border-radius: 10px;
+      padding: 8px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+    }
+    .btn-del {
+      background: transparent;
+      border: none;
+      color: #6b7280;
+      font-size: 14px;
+      cursor: pointer;
+      padding: 2px 6px;
+    }
+    .btn-del:hover { color: var(--accent); }
+
+    /* Seletores e Toggles */
+    .segmented {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      background: #090a10;
+      padding: 4px;
+      border-radius: 12px;
+      border: 1px solid var(--card-border);
+      margin-bottom: 12px;
+    }
+    .seg-btn {
+      padding: 8px;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 12px;
+      font-weight: 700;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .seg-btn.active {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 4px 12px var(--accent-glow);
+    }
+    .toggle-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-top: 1px solid #1a1e2d;
+    }
+    .toggle-info { font-size: 12px; }
+    .toggle-sub { font-size: 10px; color: var(--text-muted); display: block; }
+    
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+      flex-shrink: 0;
+    }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute; cursor: pointer; inset: 0;
+      background-color: #272a38;
+      border-radius: 24px;
+      transition: .2s;
+    }
+    .slider:before {
+      position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px;
+      background-color: white; border-radius: 50%; transition: .2s;
+    }
+    input:checked + .slider { background-color: var(--accent); }
+    input:checked + .slider:before { transform: translateX(20px); }
+    .disabled-opacity { opacity: 0.35; pointer-events: none; }
+
+    select.category-select {
+      width: 100%;
+      background: #0b0d14;
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 10px;
+      color: #fff;
+      font-size: 13px;
+      outline: none;
+      margin-top: 4px;
+    }
+
+    /* Botão Principal */
+    .btn-action {
+      width: 100%;
+      padding: 16px;
+      border: none;
+      border-radius: 16px;
+      background: linear-gradient(135deg, var(--accent), #be123c);
+      color: #fff;
+      font-size: 15px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      cursor: pointer;
+      box-shadow: 0 10px 25px var(--accent-glow);
+      transition: transform 0.1s, opacity 0.2s;
+    }
+    .btn-action:active { transform: scale(0.98); }
+    .btn-action:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+    .btn-secondary {
+      background: transparent;
+      border: 1px solid var(--card-border);
+      color: var(--text-muted);
+      font-size: 12px;
+      padding: 10px;
+      border-radius: 12px;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 6px;
+    }
+
+    /* Tela de Revelação "Segure para Ver" */
+    .reveal-box {
+      width: 100%;
+      min-height: 330px;
+      background: #11131c;
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      touch-action: none;
+      cursor: pointer;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+      transition: all 0.15s ease;
+      margin: 12px 0;
+    }
+    .reveal-box.holding.civil {
+      border-color: var(--civil);
+      box-shadow: 0 0 35px var(--civil-glow);
+      background: #0a1410;
+    }
+    .reveal-box.holding.impostor {
+      border-color: var(--accent);
+      box-shadow: 0 0 35px var(--accent-glow);
+      background: #18090d;
+    }
+    .fingerprint-circle {
+      width: 72px; height: 72px; border-radius: 20px;
+      background: #08090d; border: 1px solid #232738;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 32px; margin-bottom: 12px;
+    }
+    .word-highlight {
+      font-size: 34px; font-weight: 900; color: var(--civil);
+      margin: 8px 0; text-shadow: 0 0 20px var(--civil-glow);
+    }
+    .impostor-badge {
+      font-size: 26px; font-weight: 900; color: var(--accent);
+      text-shadow: 0 0 20px var(--accent-glow); margin-bottom: 6px;
+    }
+    .hint-alert {
+      background: #08090e; border: 1px solid #292d3e; border-radius: 10px;
+      padding: 8px 12px; font-size: 11px; color: #fbbf24; margin-top: 10px; width: 100%; text-align: left;
+    }
+
+    /* Tela de Debate */
+    .debate-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      max-height: 240px;
+      overflow-y: auto;
+      margin: 10px 0;
+    }
+    .debate-player {
+      background: #0d0f17;
+      border: 1px solid #1f2333;
+      border-radius: 12px;
+      padding: 10px;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .debate-player.first {
+      border-color: var(--accent);
+      background: #180a10;
+      font-weight: bold;
+    }
+    .order-badge {
+      width: 20px; height: 20px; border-radius: 50%;
+      background: #202434; font-size: 11px;
+      display: flex; align-items: center; justify-content: center; color: var(--text-muted);
+    }
+
+    /* Tela Final (Resultado) */
+    .result-impostors {
+      background: linear-gradient(180deg, #2a0b13, #12141d);
+      border: 1px solid var(--accent);
+      border-radius: 20px;
+      padding: 20px;
+      text-align: center;
+      margin-bottom: 12px;
+      animation: popIn 0.3s ease;
+    }
+    .result-word {
+      background: #0e111a;
+      border: 1px solid #1d2235;
+      border-radius: 18px;
+      padding: 16px;
+      text-align: center;
+      margin-bottom: 12px;
+    }
+    @keyframes popIn {
+      0% { transform: scale(0.9); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-viewport">
+
+  <!-- ==================== TELA 1: CONFIGURAÇÃO / SETUP ==================== -->
+  <section id="screenSetup">
+    <div class="header-logo">
+      <div class="badge-icon">?</div>
+      <h1 class="app-title">IMPOSTOR <span>SOCIAL</span></h1>
+      <p class="app-desc">Descubra quem está mentindo secretamente</p>
+    </div>
+
+    <!-- Jogadores -->
+    <div class="card">
+      <div class="card-title">
+        <span>Jogadores (<span id="playerCount">4</span>)</span>
+        <span id="playerValidation" style="color: #10b981;">Mínimo 3</span>
+      </div>
+      <div class="input-row">
+        <input type="text" id="playerNameInput" class="input-text" placeholder="Nome do participante..." maxlength="18">
+        <button id="btnAddPlayer" class="btn-add">+</button>
+      </div>
+      <div id="playerList" class="player-list"></div>
+    </div>
+
+    <!-- Regras da Partida -->
+    <div class="card">
+      <div class="card-title">Configurações da Sala</div>
+      
+      <!-- Seletor de Impostores -->
+      <div class="segmented">
+        <button id="btnImp1" class="seg-btn active">1 Impostor</button>
+        <button id="btnImp2" class="seg-btn">2 Impostores</button>
+      </div>
+
+      <!-- Toggle Dica -->
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <span>Dar dica para o impostor?</span>
+          <span class="toggle-sub">Recebe pista sutil sobre o tema</span>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="toggleHint">
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <!-- Toggle Se Conhecem -->
+      <div id="rowKnowEachOther" class="toggle-row disabled-opacity">
+        <div class="toggle-info">
+          <span>Impostores se conhecem?</span>
+          <span class="toggle-sub">Disponível apenas com 2 impostores</span>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="toggleKnowEachOther" disabled>
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <!-- Categoria -->
+      <div style="margin-top: 10px;">
+        <span style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Categoria das Palavras</span>
+        <select id="selectCategory" class="category-select">
+          <option value="all">🎲 Aleatório (Todas as Categorias)</option>
+        </select>
+      </div>
+    </div>
+
+    <button id="btnStartGame" class="btn-action">Começar Jogo</button>
+    <button id="btnResetHistory" class="btn-secondary">Resetar Memória de Palavras Usadas</button>
+  </section>
+
+
+  <!-- ==================== TELA 2: REVELAÇÃO SECRETA ==================== -->
+  <section id="screenReveal" class="hidden">
+    <div class="text-center">
+      <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: var(--text-muted);">Passe o celular para</span>
+      <h1 id="revealPlayerName" style="font-size: 32px; font-weight: 900; margin-top: 2px;">Lucas</h1>
+      <span id="revealPlayerCounter" style="font-size: 12px; color: var(--text-dim);">Jogador 1 de 4</span>
+    </div>
+
+    <!-- Cartão Central Segure para Ver -->
+    <div id="revealBox" class="reveal-box">
+      <!-- Oculto -->
+      <div id="revealHidden">
+        <div class="fingerprint-circle">👆</div>
+        <h3 style="font-size: 18px; font-weight: bold; margin-bottom: 4px;">Segure para ver seu papel</h3>
+        <p style="font-size: 12px; color: var(--text-muted); max-width: 220px; margin: 0 auto;">
+          Mantenha o dedo pressionado. Ao soltar, a tela oculta na mesma hora!
+        </p>
+      </div>
+
+      <!-- Revelado: Civil -->
+      <div id="revealCivil" class="hidden">
+        <span style="font-size: 11px; font-family: monospace; color: var(--civil); text-transform: uppercase;">Papel: Inocente</span>
+        <span id="civilCategory" style="font-size: 12px; color: var(--text-muted); display: block; margin-top: 4px;">Categoria</span>
+        <h2 id="civilWord" class="word-highlight">Feijoada</h2>
+        <p style="font-size: 12px; color: var(--text-muted); max-width: 240px;">
+          Dê dicas inteligentes sem entregar a palavra ao impostor!
+        </p>
+      </div>
+
+      <!-- Revelado: Impostor -->
+      <div id="revealImpostor" class="hidden">
+        <div class="impostor-badge">VOCÊ É O IMPOSTOR</div>
+        <p style="font-size: 12px; color: var(--text); max-width: 240px; margin-bottom: 6px;">
+          Você não sabe a palavra secreta. Finja que sabe e blefe para sobreviver!
+        </p>
+        <div id="impostorHintBox" class="hint-alert hidden">
+          <strong>Dica do tema:</strong> <span id="impostorHintText"></span>
+        </div>
+        <div id="impostorPartnerBox" class="hint-alert hidden" style="color: #f87171; border-color: #7f1d1d;">
+          <strong>Parceiro impostor:</strong> <span id="impostorPartnerName"></span>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top: auto;">
+      <button id="btnNextPlayer" class="btn-action hidden">Próximo Jogador</button>
+      <p id="holdInstruction" style="font-size: 11px; color: var(--text-dim); text-align: center; padding: 12px 0;">
+        Segure o cartão acima para desbloquear
+      </p>
+    </div>
+  </section>
+
+
+  <!-- ==================== TELA 3: RODA DE DEBATE ==================== -->
+  <section id="screenDebate" class="hidden">
+    <div class="text-center">
+      <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: var(--accent); font-weight: bold;">
+        Fase de Discussão
+      </span>
+      <h1 style="font-size: 28px; font-weight: 900; margin-top: 2px;">Roda de Debate</h1>
+      <p style="font-size: 12px; color: var(--text-muted);">
+        Todos viram seus papéis! Deem uma dica por vez e descubram quem mente.
+      </p>
+    </div>
+
+    <div class="card" style="margin-top: 14px; text-align: center;">
+      <span style="font-size: 11px; text-transform: uppercase; color: var(--accent); letter-spacing: 1px; font-weight: bold;">
+        👉 Quem começa a falar:
+      </span>
+      <h2 id="firstSpeakerName" style="font-size: 26px; font-weight: 900; color: #fff; margin-top: 4px;">
+        Mariana 🎙️
+      </h2>
+      <p style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
+        A roda segue no sentido horário a partir dele.
+      </p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Participantes na Roda</div>
+      <div id="debatePlayerGrid" class="debate-grid"></div>
+    </div>
+
+    <div style="margin-top: auto;">
+      <button id="btnRevealTruth" class="btn-action">Revelar a Verdade</button>
+      <button id="btnCancelGame" class="btn-secondary">Voltar ao Início</button>
+    </div>
+  </section>
+
+
+  <!-- ==================== TELA 4: RESULTADO FINAL ==================== -->
+  <section id="screenResult" class="hidden">
+    <div class="text-center">
+      <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: var(--text-muted);">Fim da Rodada</span>
+      <h1 style="font-size: 28px; font-weight: 900; margin-top: 2px;">A Verdade Revelada</h1>
+    </div>
+
+    <div class="result-impostors" style="margin-top: 16px;">
+      <div style="font-size: 11px; font-family: monospace; text-transform: uppercase; letter-spacing: 2px; color: #f87171; font-weight: bold;">
+        O(s) Impostor(es) Era(m):
+      </div>
+      <div id="resultImpostorsList" style="font-size: 28px; font-weight: 900; color: #fff; margin-top: 6px;"></div>
+    </div>
+
+    <div class="result-word">
+      <span id="resultCategory" style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;">Categoria</span>
+      <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">A palavra secreta era:</div>
+      <h2 id="resultWordName" style="font-size: 32px; font-weight: 900; color: var(--civil); margin: 4px 0;">Feijoada</h2>
+      <p id="resultWordHint" style="font-size: 12px; color: #fbbf24; font-style: italic; margin-top: 4px;"></p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Civis Inocentes</div>
+      <div id="resultCiviliansList" style="display: flex; flex-wrap: wrap; gap: 6px;"></div>
+    </div>
+
+    <div style="margin-top: auto;">
+      <button id="btnPlayAgain" class="btn-action">Jogar Nova Rodada</button>
+      <button id="btnEditConfig" class="btn-secondary">Alterar Jogadores ou Regras</button>
+    </div>
+  </section>
+
+</div>
+
+<script>
+// ==================== BANCO EXTENSO DE PALAVRAS ====================
+const BANCO_DE_PALAVRAS = {
+  COMIDAS: [
+    { palavra: "Pizza", dica: "Borda" },
+    { palavra: "Sushi", dica: "Vinagre" },
+    { palavra: "Churrasco", dica: "Fumaça" },
+    { palavra: "Lasanha", dica: "Forno" },
+    { palavra: "Pipoca", dica: "Calor" },
+    { palavra: "Hambúrguer", dica: "Prensa" },
+    { palavra: "Sorvete", dica: "Derretimento" },
+    { palavra: "Feijoada", dica: "Barro" },
+    { palavra: "Chocolate", dica: "Grão" },
+    { palavra: "Pastel", dica: "Óleo" },
+    { palavra: "Espaguete", dica: "Fervura" },
+    { palavra: "Açaí", dica: "Energia" },
+    { palavra: "Pudim", dica: "Banho" },
+    { palavra: "Coxinha", dica: "Recheio" },
+    { palavra: "Queijo", dica: "Cura" },
+    { palavra: "Pão", dica: "Casca" },
+    { palavra: "Omelete", dica: "Frigideira" },
+    { palavra: "Strogonoff", dica: "Creme" },
+    { palavra: "Salada", dica: "Frescor" },
+    { palavra: "Gelatina", dica: "Molde" },
+    { palavra: "Panqueca", dica: "Rolo" },
+    { palavra: "Risoto", dica: "Caldo" },
+    { palavra: "Quindim", dica: "Brilho" },
+    { palavra: "Moqueca", dica: "Azeite" },
+    { palavra: "Brigadeiro", dica: "Festa" },
+    { palavra: "Tapioca", dica: "Goma" },
+    { palavra: "Waffle", dica: "Grade" },
+    { palavra: "Guaraná", dica: "Semente" },
+    { palavra: "Croissant", dica: "Dobra" },
+    { palavra: "Farofa", dica: "Seco" }
+  ],
+  FILMES: [
+    { palavra: "Titanic", dica: "Joia" },
+    { palavra: "Avatar", dica: "Floresta" },
+    { palavra: "Matrix", dica: "Escolha" },
+    { palavra: "Shrek", dica: "Conto" },
+    { palavra: "Coringa", dica: "Mídia" },
+    { palavra: "Interestelar", dica: "Distorção" },
+    { palavra: "Gladiador", dica: "Honra" },
+    { palavra: "Psicose", dica: "Hospedagem" },
+    { palavra: "Alien", dica: "Sinal" },
+    { palavra: "Tubarão", dica: "Verão" },
+    { palavra: "Vingadores", dica: "Equipe" },
+    { palavra: "Rocky", dica: "Treino" },
+    { palavra: "Parasita", dica: "Infiltração" },
+    { palavra: "Jurassic", dica: "Ilha" },
+    { palavra: "ToyStory", dica: "Quarto" },
+    { palavra: "Up", dica: "Promessa" },
+    { palavra: "Batman", dica: "Herança" },
+    { palavra: "Aranha", dica: "Altura" },
+    { palavra: "Barbie", dica: "Perfeição" },
+    { palavra: "Oppenheimer", dica: "Deserto" },
+    { palavra: "Inception", dica: "Queda" },
+    { palavra: "Casablanca", dica: "Pista" },
+    { palavra: "Scarface", dica: "Império" },
+    { palavra: "Whiplash", dica: "Ritmo" },
+    { palavra: "Ratatouille", dica: "Crítica" },
+    { palavra: "Coco", dica: "Ponte" },
+    { palavra: "Cinderela", dica: "Meia-noite" },
+    { palavra: "Mulan", dica: "Alistamento" },
+    { palavra: "Wall-E", dica: "Planta" },
+    { palavra: "PulpFiction", dica: "Maleta" }
+  ],
+  OBJETOS: [
+    { palavra: "Espelho", dica: "Ângulo" },
+    { palavra: "Relógio", dica: "Ciclo" },
+    { palavra: "Cofre", dica: "Blindagem" },
+    { palavra: "Lâmpada", dica: "Filamento" },
+    { palavra: "Travesseiro", dica: "Enchimento" },
+    { palavra: "Microfone", dica: "Amplitude" },
+    { palavra: "Binóculo", dica: "Ajuste" },
+    { palavra: "Vela", dica: "Gotejamento" },
+    { palavra: "Chave", dica: "Rotação" },
+    { palavra: "Bússola", dica: "Campo" },
+    { palavra: "Câmera", dica: "Registro" },
+    { palavra: "Tesoura", dica: "Articulação" },
+    { palavra: "Caneta", dica: "Fluxo" },
+    { palavra: "Carteira", dica: "Dobra" },
+    { palavra: "Óculos", dica: "Correção" },
+    { palavra: "Escova", dica: "Fricção" },
+    { palavra: "Garrafa", dica: "Vedação" },
+    { palavra: "Sombrinha", dica: "Haste" },
+    { palavra: "Celular", dica: "Conexão" },
+    { palavra: "Caderno", dica: "Margem" },
+    { palavra: "Martelo", dica: "Impacto" },
+    { palavra: "Fone", dica: "Isolamento" },
+    { palavra: "Bateria", dica: "Carga" },
+    { palavra: "Termômetro", dica: "Escala" },
+    { palavra: "Moeda", dica: "Tiragem" },
+    { palavra: "Isqueiro", dica: "Faísca" },
+    { palavra: "Cadeado", dica: "Gancho" },
+    { palavra: "Ventilador", dica: "Hélice" },
+    { palavra: "Régua", dica: "Reta" },
+    { palavra: "Dado", dica: "Faces" }
+  ],
+  FAMOSOS: [
+    { palavra: "Neymar", dica: "Transferência" },
+    { palavra: "Messi", dica: "Disciplina" },
+    { palavra: "Anitta", dica: "Fronteira" },
+    { palavra: "Xuxa", dica: "Geração" },
+    { palavra: "Faustão", dica: "Horário" },
+    { palavra: "Beyoncé", dica: "Impacto" },
+    { palavra: "Einstein", dica: "Patente" },
+    { palavra: "Pelé", dica: "Museu" },
+    { palavra: "Madonna", dica: "Reinvenção" },
+    { palavra: "Chapolin", dica: "Nobreza" },
+    { palavra: "Silvio", dica: "Auditório" },
+    { palavra: "Ayrton", dica: "Chuva" },
+    { palavra: "Taylor", dica: "Narrativa" },
+    { palavra: "Ronaldo", dica: "Obsessão" },
+    { palavra: "Michael", dica: "Ensaio" },
+    { palavra: "Juliette", dica: "Votação" },
+    { palavra: "DiCaprio", dica: "Espera" },
+    { palavra: "Casimiro", dica: "Reação" },
+    { palavra: "Marquezine", dica: "Desfile" },
+    { palavra: "Caetano", dica: "Exílio" },
+    { palavra: "Gisele", dica: "Passarela" },
+    { palavra: "Whindersson", dica: "Piauí" },
+    { palavra: "Adele", dica: "Pausa" },
+    { palavra: "Galvão", dica: "Bordão" },
+    { palavra: "Shakira", dica: "Batida" },
+    { palavra: "Zico", dica: "Falta" },
+    { palavra: "Gaga", dica: "Carne" },
+    { palavra: "TomCruise", dica: "Dublê" },
+    { palavra: "Ludmilla", dica: "Pagode" },
+    { palavra: "Drake", dica: "Maldição" }
+  ],
+  ANIMAIS: [
+    { palavra: "Camaleão", dica: "Foco" },
+    { palavra: "Morcego", dica: "Frequência" },
+    { palavra: "Tubarão", dica: "Odor" },
+    { palavra: "Pinguim", dica: "Colônia" },
+    { palavra: "Coruja", dica: "Silêncio" },
+    { palavra: "Camelo", dica: "Travessia" },
+    { palavra: "Polvo", dica: "Fuga" },
+    { palavra: "Zebra", dica: "Padrão" },
+    { palavra: "Preguiça", dica: "Digestão" },
+    { palavra: "Abelha", dica: "Hierarquia" },
+    { palavra: "Pavão", dica: "Exibição" },
+    { palavra: "Golfinho", dica: "Salto" },
+    { palavra: "Lobo", dica: "Território" },
+    { palavra: "Elefante", dica: "Memória" },
+    { palavra: "Formiga", dica: "Carga" },
+    { palavra: "Leão", dica: "Descanso" },
+    { palavra: "Canguru", dica: "Equilíbrio" },
+    { palavra: "Urso", dica: "Reserva" },
+    { palavra: "Águia", dica: "Altitude" },
+    { palavra: "Rinoceronte", dica: "Espessura" },
+    { palavra: "Girafa", dica: "Alcance" },
+    { palavra: "Crocodilo", dica: "Emboscada" },
+    { palavra: "Hipopótamo", dica: "Submerso" },
+    { palavra: "Macaco", dica: "Polegar" },
+    { palavra: "Castor", dica: "Tronco" },
+    { palavra: "Alce", dica: "Galhada" },
+    { palavra: "Tartaruga", dica: "Longevidade" },
+    { palavra: "Flamingo", dica: "Pigmento" },
+    { palavra: "Esquilo", dica: "Estoque" },
+    { palavra: "Raposa", dica: "Toca" }
+  ],
+  ESPORTES: [
+    { palavra: "Basquete", dica: "Posse" },
+    { palavra: "Futebol", dica: "Falta" },
+    { palavra: "Natação", dica: "Virada" },
+    { palavra: "Vôlei", dica: "Rotação" },
+    { palavra: "Tênis", dica: "Vantagem" },
+    { palavra: "Boxe", dica: "Distância" },
+    { palavra: "Judô", dica: "Alavanca" },
+    { palavra: "Golfe", dica: "Vento" },
+    { palavra: "Esgrima", dica: "Pista" },
+    { palavra: "Xadrez", dica: "Espaço" },
+    { palavra: "Surfe", dica: "Remada" },
+    { palavra: "Ciclismo", dica: "Vácuo" },
+    { palavra: "Handebol", dica: "Resina" },
+    { palavra: "Rúgbi", dica: "Recuo" },
+    { palavra: "Ginástica", dica: "Aterrissagem" },
+    { palavra: "Beisebol", dica: "Base" },
+    { palavra: "Skate", dica: "Atrito" },
+    { palavra: "Tiro", dica: "Respiração" },
+    { palavra: "Atletismo", dica: "Bloco" },
+    { palavra: "Remo", dica: "Cadência" },
+    { palavra: "Polo", dica: "Montaria" },
+    { palavra: "Squash", dica: "Parede" },
+    { palavra: "Canoagem", dica: "Corredeira" },
+    { palavra: "Curling", dica: "Varrição" },
+    { palavra: "Triatlo", dica: "Transição" },
+    { palavra: "Karatê", dica: "Kata" },
+    { palavra: "Hóquei", dica: "Disco" },
+    { palavra: "Hipismo", dica: "Obstáculo" },
+    { palavra: "Boliche", dica: "Canaleta" },
+    { palavra: "Alpinismo", dica: "Grampo" }
+  ]
+};
+
+// ==================== GERENCIADOR DE LOCALSTORAGE ====================
+const STORAGE_KEY = 'impostor_app_used_words_v2';
+
+const Storage = {
+  getUsedIds() {
+    try {
+      const data = localStorage.getItem(STORAGE_KEY);
+      return data ? new Set(JSON.parse(data)) : new Set();
+    } catch { return new Set(); }
+  },
+  saveUsedId(id) {
+    try {
+      const set = this.getUsedIds();
+      set.add(id);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(set)));
+    } catch (e) { console.warn(e); }
+  },
+  resetHistory() {
+    localStorage.removeItem(STORAGE_KEY);
+  }
+};
+
+// ==================== ESTADO DO JOGO ====================
+let state = {
+  players: ["Lucas", "Mariana", "Gabriel", "Beatriz"],
+  settings: {
+    impostorCount: 1,
+    giveHintToImpostor: false,
+    impostorsKnowEachOther: false,
+    category: "all"
+  },
+  currentRound: {
+    wordItem: null,
+    category: "",
+    playersWithRoles: [],
+    currentRevealIdx: 0,
+    firstSpeakerIdx: 0,
+    hasHeldCurrent: false
+  }
+};
+
+// ==================== ELEMENTOS DO DOM ====================
+const screenSetup = document.getElementById("screenSetup");
+const screenReveal = document.getElementById("screenReveal");
+const screenDebate = document.getElementById("screenDebate");
+const screenResult = document.getElementById("screenResult");
+
+function showScreen(screen) {
+  [screenSetup, screenReveal, screenDebate, screenResult].forEach(s => s.classList.add("hidden"));
+  screen.classList.remove("hidden");
+}
+
+// ==================== SETUP INICIAL ====================
+function renderSetup() {
+  const pList = document.getElementById("playerList");
+  pList.innerHTML = "";
+  state.players.forEach((p, idx) => {
+    const div = document.createElement("div");
+    div.className = "player-chip";
+    div.innerHTML = `<span><strong>${idx + 1}.</strong> ${p}</span><button class="btn-del" onclick="removePlayer(${idx})">✕</button>`;
+    pList.appendChild(div);
+  });
+
+  document.getElementById("playerCount").textContent = state.players.length;
+  const val = document.getElementById("playerValidation");
+  const canStart = state.players.length >= 3;
+  val.textContent = canStart ? "Pronto para jogar" : "Mínimo 3";
+  val.style.color = canStart ? "#10b981" : "#f59e0b";
+  document.getElementById("btnStartGame").disabled = !canStart;
+
+  // Atualiza Categorias
+  const sel = document.getElementById("selectCategory");
+  sel.innerHTML = '<option value="all">🎲 Aleatório (Todas as Categorias)</option>';
+  Object.keys(BANCO_DE_PALAVRAS).forEach((cat) => {
+    const opt = document.createElement("option");
+    opt.value = cat;
+    opt.textContent = `${cat} (${BANCO_DE_PALAVRAS[cat].length} palavras)`;
+    sel.appendChild(opt);
+  });
+}
+
+window.removePlayer = function(index) {
+  state.players.splice(index, 1);
+  renderSetup();
+};
+
+document.getElementById("btnAddPlayer").addEventListener("click", addPlayerFromInput);
+document.getElementById("playerNameInput").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") addPlayerFromInput();
+});
+
+function addPlayerFromInput() {
+  const inp = document.getElementById("playerNameInput");
+  const val = inp.value.trim();
+  if (!val) return;
+  if (state.players.some(p => p.toLowerCase() === val.toLowerCase())) {
+    alert("Já existe um jogador com esse nome!");
+    return;
+  }
+  state.players.push(val);
+  inp.value = "";
+  renderSetup();
+}
+
+// Seletores de Impostor
+const btnImp1 = document.getElementById("btnImp1");
+const btnImp2 = document.getElementById("btnImp2");
+const rowKnowEachOther = document.getElementById("rowKnowEachOther");
+const toggleKnowEachOther = document.getElementById("toggleKnowEachOther");
+
+btnImp1.addEventListener("click", () => {
+  state.settings.impostorCount = 1;
+  btnImp1.classList.add("active");
+  btnImp2.classList.remove("active");
+  rowKnowEachOther.classList.add("disabled-opacity");
+  toggleKnowEachOther.disabled = true;
+  toggleKnowEachOther.checked = false;
+  state.settings.impostorsKnowEachOther = false;
+});
+
+btnImp2.addEventListener("click", () => {
+  state.settings.impostorCount = 2;
+  btnImp2.classList.add("active");
+  btnImp1.classList.remove("active");
+  rowKnowEachOther.classList.remove("disabled-opacity");
+  toggleKnowEachOther.disabled = false;
+});
+
+document.getElementById("toggleHint").addEventListener("change", (e) => {
+  state.settings.giveHintToImpostor = e.target.checked;
+});
+toggleKnowEachOther.addEventListener("change", (e) => {
+  state.settings.impostorsKnowEachOther = e.target.checked;
+});
+document.getElementById("selectCategory").addEventListener("change", (e) => {
+  state.settings.category = e.target.value;
+});
+
+document.getElementById("btnResetHistory").addEventListener("click", () => {
+  Storage.resetHistory();
+  alert("Histórico de palavras usadas foi resetado com sucesso!");
+});
+
+// ==================== SORTEIO DA RODADA ====================
+function startRound() {
+  // 1. Filtrar palavras elegíveis
+  const used = Storage.getUsedIds();
+  let pool = [];
+
+  if (state.settings.category === "all") {
+    Object.entries(BANCO_DE_PALAVRAS).forEach(([cat, list]) => {
+      list.forEach((item, idx) => {
+        pool.push({
+          id: `${cat}_${idx}_${item.palavra}`,
+          word: item.palavra,
+          hint: item.dica,
+          cat: cat
+        });
+      });
+    });
+  } else {
+    const selectedList = BANCO_DE_PALAVRAS[state.settings.category] || [];
+    selectedList.forEach((item, idx) => {
+      pool.push({
+        id: `${state.settings.category}_${idx}_${item.palavra}`,
+        word: item.palavra,
+        hint: item.dica,
+        cat: state.settings.category
+      });
+    });
+  }
+
+  let available = pool.filter(item => !used.has(item.id));
+
+  // Reset automático se acabarem as palavras
+  if (available.length === 0) {
+    Storage.resetHistory();
+    available = [...pool];
+  }
+
+  const selectedWord = available[Math.floor(Math.random() * available.length)];
+  Storage.saveUsedId(selectedWord.id);
+
+  // 2. Sortear impostores
+  const count = Math.min(state.settings.impostorCount, state.players.length - 1);
+  const impostorIndices = new Set();
+  while (impostorIndices.size < count) {
+    impostorIndices.add(Math.floor(Math.random() * state.players.length));
+  }
+
+  const playersWithRoles = state.players.map((name, idx) => ({
+    name,
+    isImpostor: impostorIndices.has(idx)
+  }));
+
+  // 3. Sorteia quem começa a falar com probabilidade enviesada (95% Civil / 5% Impostor)
+  const civilIndices = playersWithRoles
+    .map((p, idx) => ({ isImp: p.isImpostor, idx }))
+    .filter(p => !p.isImp)
+    .map(p => p.idx);
+
+  const impIndices = playersWithRoles
+    .map((p, idx) => ({ isImp: p.isImpostor, idx }))
+    .filter(p => p.isImp)
+    .map(p => p.idx);
+
+  let chosenSpeaker = 0;
+  const roll = Math.random();
+
+  if (roll < 0.95 && civilIndices.length > 0) {
+    chosenSpeaker = civilIndices[Math.floor(Math.random() * civilIndices.length)];
+  } else if (impIndices.length > 0) {
+    chosenSpeaker = impIndices[Math.floor(Math.random() * impIndices.length)];
+  } else if (civilIndices.length > 0) {
+    chosenSpeaker = civilIndices[Math.floor(Math.random() * civilIndices.length)];
+  }
+
+  state.currentRound = {
+    wordItem: selectedWord,
+    category: selectedWord.cat,
+    playersWithRoles,
+    currentRevealIdx: 0,
+    firstSpeakerIdx: chosenSpeaker,
+    hasHeldCurrent: false
+  };
+
+  setupRevealView();
+  showScreen(screenReveal);
+}
+
+document.getElementById("btnStartGame").addEventListener("click", startRound);
+
+// ==================== TELA DE REVELAÇÃO SECRETA ====================
+const revealBox = document.getElementById("revealBox");
+const revealHidden = document.getElementById("revealHidden");
+const revealCivil = document.getElementById("revealCivil");
+const revealImpostor = document.getElementById("revealImpostor");
+const btnNextPlayer = document.getElementById("btnNextPlayer");
+const holdInstruction = document.getElementById("holdInstruction");
+
+function setupRevealView() {
+  const round = state.currentRound;
+  const current = round.playersWithRoles[round.currentRevealIdx];
+  round.hasHeldCurrent = false;
+
+  document.getElementById("revealPlayerName").textContent = current.name;
+  document.getElementById("revealPlayerCounter").textContent = 
+    `Jogador ${round.currentRevealIdx + 1} de ${round.playersWithRoles.length}`;
+
+  btnNextPlayer.classList.add("hidden");
+  holdInstruction.classList.remove("hidden");
+
+  // Dados do Civil
+  document.getElementById("civilCategory").textContent = `Categoria: ${round.category}`;
+  document.getElementById("civilWord").textContent = round.wordItem.word;
+
+  // Dados do Impostor
+  const hintBox = document.getElementById("impostorHintBox");
+  if (state.settings.giveHintToImpostor) {
+    document.getElementById("impostorHintText").textContent = round.wordItem.hint;
+    hintBox.classList.remove("hidden");
+  } else {
+    hintBox.classList.add("hidden");
+  }
+
+  const partnerBox = document.getElementById("impostorPartnerBox");
+  const partners = round.playersWithRoles
+    .filter(p => p.isImpostor && p.name !== current.name)
+    .map(p => p.name);
+
+  if (state.settings.impostorsKnowEachOther && partners.length > 0) {
+    document.getElementById("impostorPartnerName").textContent = partners.join(", ");
+    partnerBox.classList.remove("hidden");
+  } else {
+    partnerBox.classList.add("hidden");
+  }
+
+  hideReveal();
+}
+
+function showReveal(e) {
+  e.preventDefault();
+  const round = state.currentRound;
+  const current = round.playersWithRoles[round.currentRevealIdx];
+  round.hasHeldCurrent = true;
+
+  revealHidden.classList.add("hidden");
+
+  if (current.isImpostor) {
+    revealBox.className = "reveal-box holding impostor";
+    revealImpostor.classList.remove("hidden");
+    revealCivil.classList.add("hidden");
+  } else {
+    revealBox.className = "reveal-box holding civil";
+    revealCivil.classList.remove("hidden");
+    revealImpostor.classList.add("hidden");
+  }
+}
+
+function hideReveal() {
+  revealHidden.classList.remove("hidden");
+  revealCivil.classList.add("hidden");
+  revealImpostor.classList.add("hidden");
+  revealBox.className = "reveal-box";
+
+  if (state.currentRound.hasHeldCurrent) {
+    btnNextPlayer.classList.remove("hidden");
+    holdInstruction.classList.add("hidden");
+
+    const isLast = state.currentRound.currentRevealIdx === state.currentRound.playersWithRoles.length - 1;
+    btnNextPlayer.textContent = isLast ? "Todos Viram! Iniciar Debate" : "Próximo Jogador";
+  }
+}
+
+revealBox.addEventListener("pointerdown", showReveal);
+revealBox.addEventListener("pointerup", hideReveal);
+revealBox.addEventListener("pointerleave", hideReveal);
+revealBox.addEventListener("pointercancel", hideReveal);
+revealBox.addEventListener("contextmenu", e => e.preventDefault());
+
+btnNextPlayer.addEventListener("click", () => {
+  const round = state.currentRound;
+  if (round.currentRevealIdx < round.playersWithRoles.length - 1) {
+    round.currentRevealIdx++;
+    setupRevealView();
+  } else {
+    setupDebateView();
+    showScreen(screenDebate);
+  }
+});
+
+// ==================== TELA DE DEBATE ====================
+function setupDebateView() {
+  const round = state.currentRound;
+  const first = round.playersWithRoles[round.firstSpeakerIdx];
+  document.getElementById("firstSpeakerName").textContent = `${first.name} 🎙️`;
+
+  const grid = document.getElementById("debatePlayerGrid");
+  grid.innerHTML = "";
+
+  round.playersWithRoles.forEach((p, idx) => {
+    const isFirst = idx === round.firstSpeakerIdx;
+    const div = document.createElement("div");
+    div.className = `debate-player ${isFirst ? 'first' : ''}`;
+    div.innerHTML = `
+      <span class="order-badge">${idx + 1}</span>
+      <span style="flex:1; overflow:hidden; text-overflow:ellipsis;">${p.name}</span>
+      ${isFirst ? '<span style="color:var(--accent); font-size:10px; font-weight:bold;">1º</span>' : ''}
+    `;
+    grid.appendChild(div);
+  });
+}
+
+document.getElementById("btnRevealTruth").addEventListener("click", () => {
+  setupResultView();
+  showScreen(screenResult);
+});
+
+document.getElementById("btnCancelGame").addEventListener("click", () => {
+  if (confirm("Voltar ao menu inicial?")) {
+    renderSetup();
+    showScreen(screenSetup);
+  }
+});
+
+// ==================== TELA DE RESULTADO & JOGAR NOVA RODADA ====================
+function setupResultView() {
+  const round = state.currentRound;
+  const impostors = round.playersWithRoles.filter(p => p.isImpostor);
+  const civilians = round.playersWithRoles.filter(p => !p.isImpostor);
+
+  document.getElementById("resultImpostorsList").textContent = impostors.map(p => p.name).join(" & ");
+  document.getElementById("resultCategory").textContent = `Categoria: ${round.category}`;
+  document.getElementById("resultWordName").textContent = round.wordItem.word;
+  document.getElementById("resultWordHint").textContent = `Dica: "${round.wordItem.hint}"`;
+
+  const civList = document.getElementById("resultCiviliansList");
+  civList.innerHTML = "";
+  civilians.forEach(c => {
+    const tag = document.createElement("span");
+    tag.style = "background: #090b12; border: 1px solid #1c2030; padding: 4px 10px; border-radius: 8px; font-size: 12px;";
+    tag.textContent = c.name;
+    civList.appendChild(tag);
+  });
+}
+
+// 3. Botão 'Jogar Nova Rodada': preserva jogadores, configurações e puxa nova palavra
+document.getElementById("btnPlayAgain").addEventListener("click", () => {
+  startRound();
+});
+
+document.getElementById("btnEditConfig").addEventListener("click", () => {
+  renderSetup();
+  showScreen(screenSetup);
+});
+
+// Inicialização
+renderSetup();
+</script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+{
+  "name": "Remix Impostor Secreto - Jogo Social de Dedução",
+  "description": "Jogo social de dedução e blefe onde todos recebem uma palavra secreta, exceto o impostor.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
